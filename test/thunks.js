@@ -271,6 +271,7 @@ describe('co(* -> yield fn(done))', function () {
     })
 
     it('should catch errors on the first invocation', function(){
+      // 被onFinished捕获错误
       return co(function *(){
         throw new Error('fail');
       }).catch(function(err){

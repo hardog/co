@@ -40,6 +40,7 @@ function co(gen) {
     onFulfilled();
 
     // 执行函数体
+    // 执行第一个yield时如果抛出错误将直接返回
     function onFulfilled(res) {
 
       var ret;
@@ -67,6 +68,7 @@ function co(gen) {
 
     // 接收上次 yield 的值
     function next(ret) {
+      console.log('ret', ret)
       if (ret.done) return resolve(ret.value);
       var value = toPromise.call(ctx, ret.value);
 
