@@ -16,7 +16,7 @@
     "mz": "^1.0.2"
   },
   "scripts": {
-    "test": "mocha --harmony",
+    "test": "node_modules/mocha/bin/mocha --harmony",
     "test-cov": "node --harmony node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter dot",
     "test-travis": "node --harmony node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha --report lcovonly -- --reporter dot",
     "prepublish": "npm run browserify",

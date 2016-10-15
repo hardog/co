@@ -22,6 +22,7 @@ describe('co(* -> yield [])', function(){
   it('should noop with no args', function(){
     return co(function *(){
       var res = yield [];
+      // co里面 yield 返回的值即yield后面的执行结果
       assert.equal(0, res.length);
     });
   })
