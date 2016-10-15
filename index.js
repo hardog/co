@@ -12,15 +12,7 @@ var slice = Array.prototype.slice;
 module.exports = co['default'] = co.co = co;
 
 /**
- * Wrap the given generator `fn` into a
- * function that returns a promise.
- * This is a separate function so that
- * every `co()` call doesn't create a new,
- * unnecessary closure.
- *
- * @param {GeneratorFunction} fn
- * @return {Function}
- * @api public
+ * 将生成器包装成Promise函数
  */
 
 co.wrap = function (fn) {
@@ -32,50 +24,37 @@ co.wrap = function (fn) {
 };
 
 /**
- * Execute the generator function or a generator
- * and return a promise.
- *
- * @param {Function} fn
- * @return {Promise}
- * @api public
+ * 执行生成器函数或者生成器
  */
 
 function co(gen) {
   var ctx = this;
   var args = slice.call(arguments, 1);
 
-  // we wrap everything in a promise to avoid promise chaining,
-  // which leads to memory leak errors.
-  // see https://github.com/tj/co/issues/180
   return new Promise(function(resolve, reject) {
+    // 如果是函数直接执行function(){}/function *(){}
     if (typeof gen === 'function') gen = gen.apply(ctx, args);
+    // 如果不是生成器函数直接返回
     if (!gen || typeof gen.next !== 'function') return resolve(gen);
 
     onFulfilled();
 
-    /**
-     * @param {Mixed} res
-     * @return {Promise}
-     * @api private
-     */
-
+    // 执行函数体
     function onFulfilled(res) {
+
       var ret;
       try {
         ret = gen.next(res);
       } catch (e) {
         return reject(e);
       }
+
       next(ret);
       return null;
     }
 
-    /**
-     * @param {Error} err
-     * @return {Promise}
-     * @api private
-     */
-
+    // yield过程中如果出现错误
+    // 大部分错误通过这个捕获
     function onRejected(err) {
       var ret;
       try {
@@ -86,18 +65,12 @@ function co(gen) {
       next(ret);
     }
 
-    /**
-     * Get the next value in the generator,
-     * return a promise.
-     *
-     * @param {Object} ret
-     * @return {Promise}
-     * @api private
-     */
-
+    // 接收上次 yield 的值
     function next(ret) {
       if (ret.done) return resolve(ret.value);
       var value = toPromise.call(ctx, ret.value);
+
+      // 最后生成的值都是转换成Promise, 执行后返回的
       if (value && isPromise(value)) return value.then(onFulfilled, onRejected);
       return onRejected(new TypeError('You may only yield a function, promise, generator, array, or object, '
         + 'but the following object was passed: "' + String(ret.value) + '"'));
@@ -105,14 +78,9 @@ function co(gen) {
   });
 }
 
-/**
- * Convert a `yield`ed value into a promise.
- *
- * @param {Mixed} obj
- * @return {Promise}
- * @api private
- */
 
+// 将生成器函数, 函数, 数组, 对象转换成Promise对象
+// 原始值如1, 'hello'是不会转成Promise的
 function toPromise(obj) {
   if (!obj) return obj;
   if (isPromise(obj)) return obj;
@@ -123,14 +91,9 @@ function toPromise(obj) {
   return obj;
 }
 
-/**
- * Convert a thunk to a promise.
- *
- * @param {Function}
- * @return {Promise}
- * @api private
- */
 
+// 将一个函数转换成Promise 带有done 回调参数
+// 即yield function(done){}
 function thunkToPromise(fn) {
   var ctx = this;
   return new Promise(function (resolve, reject) {
@@ -142,28 +105,13 @@ function thunkToPromise(fn) {
   });
 }
 
-/**
- * Convert an array of "yieldables" to a promise.
- * Uses `Promise.all()` internally.
- *
- * @param {Array} obj
- * @return {Promise}
- * @api private
- */
-
+// 将数组转换成Promise
 function arrayToPromise(obj) {
   return Promise.all(obj.map(toPromise, this));
 }
 
-/**
- * Convert an object of "yieldables" to a promise.
- * Uses `Promise.all()` internally.
- *
- * @param {Object} obj
- * @return {Promise}
- * @api private
- */
 
+// 根据对象的key, 将每一个对象的值都转化成Promise对象
 function objectToPromise(obj){
   var results = new obj.constructor();
   var keys = Object.keys(obj);
@@ -187,53 +135,28 @@ function objectToPromise(obj){
   }
 }
 
-/**
- * Check if `obj` is a promise.
- *
- * @param {Object} obj
- * @return {Boolean}
- * @api private
- */
-
+// 检查对象是否是Promise
 function isPromise(obj) {
   return 'function' == typeof obj.then;
 }
 
-/**
- * Check if `obj` is a generator.
- *
- * @param {Mixed} obj
- * @return {Boolean}
- * @api private
- */
-
+// 检查对象是否是生成器 
+// 生成器函数: g = function *(){}
+// 生成器: gg = g();
 function isGenerator(obj) {
   return 'function' == typeof obj.next && 'function' == typeof obj.throw;
 }
 
-/**
- * Check if `obj` is a generator function.
- *
- * @param {Mixed} obj
- * @return {Boolean}
- * @api private
- */
- 
+// 检查是否是生成器函数 
 function isGeneratorFunction(obj) {
   var constructor = obj.constructor;
   if (!constructor) return false;
+  // chrome 53浏览器中生成器构造函数有 name 属性
   if ('GeneratorFunction' === constructor.name || 'GeneratorFunction' === constructor.displayName) return true;
   return isGenerator(constructor.prototype);
 }
 
-/**
- * Check for plain object.
- *
- * @param {Mixed} val
- * @return {Boolean}
- * @api private
- */
-
+// 检查val是否是对象
 function isObject(val) {
   return Object == val.constructor;
 }
