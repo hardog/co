@@ -13,6 +13,7 @@ module.exports = co['default'] = co.co = co;
 
 /**
  * 将生成器包装成Promise函数
+ * 为什么要这么写?
  */
 
 co.wrap = function (fn) {
@@ -25,8 +26,22 @@ co.wrap = function (fn) {
 
 /**
  * 执行生成器函数或者生成器
+ * co的执行顺序是怎么样的?
+ * yield遇到函数怎么执行?
+ * co中yield后面跟常量(即yield 'hello')是怎么执行的?
+ * co中直接 yield function(){} 行不行, 还缺少什么?
+ * yield functioin(){}; 执行完此处, gen.next();返回什么?
+ * 
+ * co中, yield function* () {
+ *   yield function* (){}
+ * } 的执行顺序是什么样的? 
+ * 主要理解 gen.next() 在一个生成器中执行中如果调到另一个生成器
+ * 则再次调用co执行;
+ *
+ * yield 抛出错误co是否能捕获, 外层是否能捕获? 捕获顺序是怎样的?
+ * co中yield 一个对象的过程是怎么样的?
+ * 
  */
-
 function co(gen) {
   var ctx = this;
   // 除了第一个参数, 其他参数传进中间件gen
@@ -69,7 +84,6 @@ function co(gen) {
 
     // 接收上次 yield 的值
     function next(ret) {
-      console.log('ret', ret)
       if (ret.done) return resolve(ret.value);
       var value = toPromise.call(ctx, ret.value);
 
