@@ -29,6 +29,7 @@ co.wrap = function (fn) {
 
 function co(gen) {
   var ctx = this;
+  // 除了第一个参数, 其他参数传进中间件gen
   var args = slice.call(arguments, 1);
 
   return new Promise(function(resolve, reject) {
@@ -74,6 +75,7 @@ function co(gen) {
 
       // 最后生成的值都是转换成Promise, 执行后返回的
       if (value && isPromise(value)) return value.then(onFulfilled, onRejected);
+      // 只允许yield 函数, Promise, 生成器, 数组, 对象
       return onRejected(new TypeError('You may only yield a function, promise, generator, array, or object, '
         + 'but the following object was passed: "' + String(ret.value) + '"'));
     }
